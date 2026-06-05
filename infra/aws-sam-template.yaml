@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Insurance Document Risk Analyzer API deployment scaffold.
+
+Parameters:
+  DocumentBucketName:
+    Type: String
+    Description: S3 bucket for uploaded insurance documents and analysis results.
+
+Resources:
+  DocumentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DocumentBucketName
+
+  AnalyzerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Timeout: 120
+      MemorySize: 2048
+      Environment:
+        Variables:
+          STORAGE_BACKEND: s3
+          S3_BUCKET: !Ref DocumentBucket
+          APP_ENV: aws
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref DocumentBucket
+      Events:
+        Api:
+          Type: HttpApi
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ..
+      DockerTag: python3.11-v1
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API endpoint.
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+
