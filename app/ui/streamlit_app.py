@@ -16,7 +16,7 @@ from app.pipeline import AnalysisPipeline  # noqa: E402
 from app.storage import build_storage  # noqa: E402
 
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+API_BASE_URL = os.getenv("API_BASE_URL", "").strip()
 
 st.set_page_config(page_title="Insurance Risk Analyzer", layout="wide")
 st.title("Insurance Document Risk Analyzer")
@@ -24,12 +24,15 @@ st.title("Insurance Document Risk Analyzer")
 with st.sidebar:
     st.header("Service")
     api_base_url = st.text_input("API base URL", API_BASE_URL)
-    if st.button("Check health"):
-        try:
-            response = requests.get(f"{api_base_url}/health", timeout=10)
-            st.json(response.json())
-        except Exception as exc:
-            st.error(f"Health check failed: {exc}")
+    if api_base_url:
+        if st.button("Check health"):
+            try:
+                response = requests.get(f"{api_base_url}/health", timeout=10)
+                st.json(response.json())
+            except Exception as exc:
+                st.error(f"Health check failed: {exc}")
+    else:
+        st.caption("Using built-in Streamlit analysis mode.")
 
 uploaded = st.file_uploader("Upload an insurance PDF or image", type=["pdf", "png", "jpg", "jpeg"])
 
@@ -37,12 +40,17 @@ if uploaded is not None and st.button("Analyze document", type="primary"):
     content = uploaded.getvalue()
     files = {"file": (uploaded.name, content, uploaded.type)}
     with st.spinner("Analyzing document..."):
-        try:
-            response = requests.post(f"{api_base_url}/analyze", files=files, timeout=120)
-            response.raise_for_status()
-            result = response.json()
-        except Exception as exc:
-            st.info(f"API unavailable, running local Streamlit analysis instead. Details: {exc}")
+        if api_base_url:
+            try:
+                response = requests.post(f"{api_base_url}/analyze", files=files, timeout=120)
+                response.raise_for_status()
+                result = response.json()
+            except Exception:
+                st.warning("The configured API is unavailable, so built-in analysis mode was used.")
+                settings = get_settings()
+                pipeline = AnalysisPipeline(settings=settings, storage=build_storage(settings))
+                result = pipeline.analyze(uploaded.name, uploaded.type or "", content).model_dump(mode="json")
+        else:
             settings = get_settings()
             pipeline = AnalysisPipeline(settings=settings, storage=build_storage(settings))
             result = pipeline.analyze(uploaded.name, uploaded.type or "", content).model_dump(mode="json")
