@@ -1,9 +1,19 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
+import sys
 
 import requests
 import streamlit as st
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from app.config import get_settings  # noqa: E402
+from app.pipeline import AnalysisPipeline  # noqa: E402
+from app.storage import build_storage  # noqa: E402
 
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
@@ -24,17 +34,18 @@ with st.sidebar:
 uploaded = st.file_uploader("Upload an insurance PDF or image", type=["pdf", "png", "jpg", "jpeg"])
 
 if uploaded is not None and st.button("Analyze document", type="primary"):
-    files = {"file": (uploaded.name, uploaded.getvalue(), uploaded.type)}
+    content = uploaded.getvalue()
+    files = {"file": (uploaded.name, content, uploaded.type)}
     with st.spinner("Analyzing document..."):
         try:
             response = requests.post(f"{api_base_url}/analyze", files=files, timeout=120)
+            response.raise_for_status()
+            result = response.json()
         except Exception as exc:
-            st.error(f"Request failed: {exc}")
-            st.stop()
-    if response.status_code >= 400:
-        st.error(response.text)
-        st.stop()
-    result = response.json()
+            st.info(f"API unavailable, running local Streamlit analysis instead. Details: {exc}")
+            settings = get_settings()
+            pipeline = AnalysisPipeline(settings=settings, storage=build_storage(settings))
+            result = pipeline.analyze(uploaded.name, uploaded.type or "", content).model_dump(mode="json")
 
     col_score, col_decision, col_id = st.columns(3)
     col_score.metric("Risk score", result["risk_score"])
@@ -68,4 +79,3 @@ if uploaded is not None and st.button("Analyze document", type="primary"):
 
     with st.expander("Raw analysis JSON"):
         st.json(result)
-
