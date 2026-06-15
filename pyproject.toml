@@ -3,7 +3,7 @@ name = "insurance-document-risk-analyzer"
 version = "0.1.0"
 description = "AI-powered insurance document ingestion, extraction, risk scoring, and underwriting recommendations."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11,<3.13"
 dependencies = [
   "fastapi>=0.110",
   "uvicorn[standard]>=0.27",
@@ -18,7 +18,7 @@ dependencies = [
 ai = [
   "torch>=2.2",
   "transformers>=4.38",
-  "spacy>=3.7",
+  "spacy>=3.7.5,<4.0",
   "pymupdf>=1.23",
   "pillow>=10.2",
   "langchain>=0.1.13",
