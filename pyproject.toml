@@ -1,4 +1,5 @@
 [project]
+package-mode = false
 name = "insurance-document-risk-analyzer"
 version = "0.1.0"
 description = "AI-powered insurance document ingestion, extraction, risk scoring, and underwriting recommendations."
