@@ -31,6 +31,14 @@ Run the demo UI:
 streamlit run app/ui/streamlit_app.py
 ```
 
+## AWS deployment
+
+The root `Dockerfile` deploys the Streamlit web app on port `8080`, which works well with AWS Elastic Beanstalk's Docker platform.
+
+See [docs/aws-elastic-beanstalk.md](docs/aws-elastic-beanstalk.md) for the deployment steps.
+
+The FastAPI backend Dockerfile is available separately as `Dockerfile.api`.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and set values as needed. The service can run in `offline` LLM mode and `local` storage mode without cloud or model credentials.
@@ -53,4 +61,3 @@ For AWS deployment:
 - `risk_label` with values `low`, `medium`, or `high`
 
 When no artifact is present, the service uses a transparent fallback scoring model so the pipeline remains demoable.
-
